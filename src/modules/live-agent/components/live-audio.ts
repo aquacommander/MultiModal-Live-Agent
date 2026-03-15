@@ -34,6 +34,7 @@ export class GdmLiveAudio extends LitElement {
   private sourceNode: AudioBufferSourceNode;
   private scriptProcessorNode: ScriptProcessorNode;
   private sources = new Set<AudioBufferSourceNode>();
+  private speechRecognition: any = null;
 
   static styles = css`
       #status {
@@ -122,6 +123,18 @@ export class GdmLiveAudio extends LitElement {
   constructor() {
     super();
     this.initClient();
+    this.initSpeechRecognition();
+  }
+
+  private emitLiveEvent(eventName: string, detail: Record<string, unknown>) {
+    window.dispatchEvent(
+      new CustomEvent(eventName, {
+        detail: {
+          timestamp: Date.now(),
+          ...detail,
+        },
+      }),
+    );
   }
 
   private initAudio() {
@@ -147,10 +160,19 @@ export class GdmLiveAudio extends LitElement {
         callbacks: {
           onopen: () => {
             this.updateStatus('Opened');
+            this.emitLiveEvent('live-agent:session-status', {
+              connected: true,
+              message: 'Live session opened',
+            });
           },
           onmessage: async (message: LiveServerMessage) => {
-            const audio =
-              message.serverContent?.modelTurn?.parts[0]?.inlineData;
+            const parts = message.serverContent?.modelTurn?.parts || [];
+            const audio = parts.find((part: any) => part.inlineData)?.inlineData;
+            const responseText = parts
+              .map((part: any) => part.text)
+              .filter(Boolean)
+              .join(' ')
+              .trim();
 
             if (audio) {
               this.nextStartTime = Math.max(
@@ -176,6 +198,12 @@ export class GdmLiveAudio extends LitElement {
               this.sources.add(source);
             }
 
+            if (responseText) {
+              this.emitLiveEvent('live-agent:model-response', {
+                text: responseText,
+              });
+            }
+
             const interrupted = message.serverContent?.interrupted;
             if (interrupted) {
               for (const source of this.sources.values()) {
@@ -183,13 +211,21 @@ export class GdmLiveAudio extends LitElement {
                 this.sources.delete(source);
               }
               this.nextStartTime = 0;
+              this.emitLiveEvent('live-agent:interrupted', {
+                reason: 'Server interruption event received',
+              });
             }
           },
           onerror: (e: ErrorEvent) => {
             this.updateError(e.message);
+            this.emitLiveEvent('live-agent:error', { message: e.message });
           },
           onclose: (e: CloseEvent) => {
             this.updateStatus('Close:' + e.reason);
+            this.emitLiveEvent('live-agent:session-status', {
+              connected: false,
+              message: e.reason || 'Live session closed',
+            });
           },
         },
         config: {
@@ -206,10 +242,71 @@ export class GdmLiveAudio extends LitElement {
 
   private updateStatus(msg: string) {
     this.status = msg;
+    this.emitLiveEvent('live-agent:status', { message: msg });
   }
 
   private updateError(msg: string) {
     this.error = msg;
+    this.emitLiveEvent('live-agent:error', { message: msg });
+  }
+
+  private initSpeechRecognition() {
+    const SpeechRecognitionCtor =
+      (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+
+    if (!SpeechRecognitionCtor) {
+      this.emitLiveEvent('live-agent:status', {
+        message: 'Speech recognition unavailable in this browser',
+      });
+      return;
+    }
+
+    this.speechRecognition = new SpeechRecognitionCtor();
+    this.speechRecognition.continuous = true;
+    this.speechRecognition.interimResults = true;
+    this.speechRecognition.lang = 'en-US';
+
+    this.speechRecognition.onresult = (event: any) => {
+      let finalTranscript = '';
+
+      for (let i = event.resultIndex; i < event.results.length; i++) {
+        const transcript = event.results[i][0]?.transcript || '';
+        if (event.results[i].isFinal) {
+          finalTranscript += transcript;
+        }
+      }
+
+      if (finalTranscript.trim()) {
+        this.emitLiveEvent('live-agent:user-transcript', {
+          text: finalTranscript.trim(),
+          final: true,
+        });
+      }
+    };
+
+    this.speechRecognition.onerror = (event: any) => {
+      this.emitLiveEvent('live-agent:error', {
+        message: event.error || 'Speech recognition error',
+      });
+    };
+  }
+
+  private startSpeechRecognition() {
+    if (!this.speechRecognition) return;
+    try {
+      this.speechRecognition.start();
+    } catch (_e) {
+      // Ignore duplicate start errors from browser speech API.
+    }
+  }
+
+  private stopSpeechRecognition() {
+    if (!this.speechRecognition) return;
+    try {
+      this.speechRecognition.stop();
+    } catch (_e) {
+      // Ignore stop race conditions.
+    }
   }
 
   private async startRecording() {
@@ -249,6 +346,8 @@ export class GdmLiveAudio extends LitElement {
       this.scriptProcessorNode.connect(this.inputAudioContext.destination);
       this.isRecording = true;
       this.updateStatus('Recording...');
+      this.emitLiveEvent('live-agent:recording', { recording: true });
+      this.startSpeechRecognition();
     } catch (err: any) {
       this.updateStatus(`Error: ${err.message}`);
       this.stopRecording();
@@ -273,6 +372,8 @@ export class GdmLiveAudio extends LitElement {
       this.mediaStream = null;
     }
 
+    this.stopSpeechRecognition();
+    this.emitLiveEvent('live-agent:recording', { recording: false });
     this.updateStatus('Recording stopped.');
   }
 

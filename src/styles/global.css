@@ -86,6 +86,38 @@ body,
   margin: 10px 0 8px;
 }
 
+.workflow-settings {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 8px;
+  border: 1px solid #27272a;
+  border-radius: 8px;
+  margin-top: 8px;
+  background: #141418;
+}
+
+.setting-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  color: #d4d4d8;
+}
+
+.setting-column {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 12px;
+  color: #d4d4d8;
+}
+
+.setting-column input[type='range'] {
+  width: 100%;
+}
+
 .workflow-composer textarea,
 .workflow-composer button {
   width: 100%;
@@ -115,6 +147,7 @@ body,
   width: 100%;
   display: flex;
   justify-content: space-between;
+  flex-wrap: wrap;
   gap: 12px;
   font-size: 12px;
   color: #a1a1aa;

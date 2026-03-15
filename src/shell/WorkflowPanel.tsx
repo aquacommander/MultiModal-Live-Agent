@@ -5,15 +5,47 @@ interface WorkflowPanelProps {
   stage: WorkflowStage;
   tasks: WorkflowTask[];
   onRouteRequest: (goal: string) => void;
+  autoRouteEnabled: boolean;
+  onToggleAutoRoute: (enabled: boolean) => void;
+  minTranscriptLength: number;
+  onMinTranscriptLengthChange: (value: number) => void;
 }
 
-export const WorkflowPanel: React.FC<WorkflowPanelProps> = ({ stage, tasks, onRouteRequest }) => {
+export const WorkflowPanel: React.FC<WorkflowPanelProps> = ({
+  stage,
+  tasks,
+  onRouteRequest,
+  autoRouteEnabled,
+  onToggleAutoRoute,
+  minTranscriptLength,
+  onMinTranscriptLengthChange,
+}) => {
   const [goal, setGoal] = useState('');
 
   return (
     <div className="shell-card">
       <h2>Workflow</h2>
       <p className="muted">Current stage: {stage}</p>
+      <div className="workflow-settings">
+        <label className="setting-row">
+          <span>Auto-route from voice</span>
+          <input
+            type="checkbox"
+            checked={autoRouteEnabled}
+            onChange={(e) => onToggleAutoRoute(e.target.checked)}
+          />
+        </label>
+        <label className="setting-column">
+          <span>Minimum transcript length: {minTranscriptLength}</span>
+          <input
+            type="range"
+            min={8}
+            max={80}
+            value={minTranscriptLength}
+            onChange={(e) => onMinTranscriptLengthChange(Number(e.target.value))}
+          />
+        </label>
+      </div>
       <div className="workflow-composer">
         <textarea
           value={goal}
