@@ -130,11 +130,11 @@ export class GdmLiveAudioVisuals3D extends LitElement {
     const geometry = new THREE.IcosahedronGeometry(1, 10);
 
     const sphereMaterial = new THREE.MeshStandardMaterial({
-      color: 0x081433,
-      metalness: 0.86,
-      roughness: 0.18,
-      emissive: 0x04122d,
-      emissiveIntensity: 1.3,
+      color: 0x08152a,
+      metalness: 0.84,
+      roughness: 0.22,
+      emissive: 0x071731,
+      emissiveIntensity: 1.15,
     });
 
     sphereMaterial.onBeforeCompile = (shader) => {
@@ -411,15 +411,15 @@ export class GdmLiveAudioVisuals3D extends LitElement {
       this.camera.lookAt(this.sphere.position);
 
       if (this.useDynamicColors) {
-        const aiColor = new THREE.Color(0x64efff);
-        const userColor = new THREE.Color(0x3d8fff);
-        const baseColor = new THREE.Color(0x04122d);
+        const aiColor = new THREE.Color(0x35d2ff);
+        const userColor = new THREE.Color(0x2d72ff);
+        const baseColor = new THREE.Color(0x071731);
         const targetEmissive = baseColor.clone().lerp(userColor, inputLevel).lerp(aiColor, outputLevel);
         sphereMaterial.emissive.lerp(targetEmissive, 0.1);
-        sphereMaterial.emissiveIntensity = 1.3 + outputLevel * 4.2 + inputLevel * 1.8;
+        sphereMaterial.emissiveIntensity = 1.15 + outputLevel * 3.8 + inputLevel * 1.6;
       } else {
-        sphereMaterial.emissive.setHex(0x04122d);
-        sphereMaterial.emissiveIntensity = 1.3;
+        sphereMaterial.emissive.setHex(0x071731);
+        sphereMaterial.emissiveIntensity = 1.15;
       }
 
       sphereMaterial.userData.shader.uniforms.time.value += dt * 0.1 * outputLevel;
