@@ -13,6 +13,7 @@ export interface PersistArtifactResult {
 }
 
 const getCloudEndpoint = () => (process.env.CLOUD_PERSIST_ENDPOINT || '').trim();
+const getCloudPersistApiKey = () => (process.env.CLOUD_PERSIST_API_KEY || '').trim();
 
 const buildFileName = (kind: 'image' | 'video', prompt: string, explicit?: string) => {
   if (explicit) return explicit;
@@ -60,6 +61,11 @@ export const persistArtifactToCloud = async (
 
     const response = await fetch(endpoint, {
       method: 'POST',
+      headers: getCloudPersistApiKey()
+        ? {
+            'x-upload-api-key': getCloudPersistApiKey(),
+          }
+        : undefined,
       body: formData,
     });
 

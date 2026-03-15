@@ -54,10 +54,21 @@ gcloud run deploy cloud-upload-service \
   --set-env-vars BUCKET_NAME=$BUCKET_NAME,MAKE_PUBLIC=false,CORS_ORIGINS=https://your-frontend-domain
 ```
 
+### PowerShell one-command deploy (Windows)
+
+```powershell
+.\deploy.ps1 `
+  -ProjectId "your-gcp-project-id" `
+  -BucketName "your-gcs-bucket-name" `
+  -CorsOrigins "http://localhost:3000,https://your-frontend-domain" `
+  -UploadApiKey "your-secret-upload-key"
+```
+
 ## Frontend integration
 
 Set this in root frontend `.env.local`:
 
 ```env
 CLOUD_PERSIST_ENDPOINT=https://<cloud-run-url>/artifacts/upload
+CLOUD_PERSIST_API_KEY=your-secret-upload-key
 ```

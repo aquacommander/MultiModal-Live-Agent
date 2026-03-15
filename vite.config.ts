@@ -14,7 +14,8 @@ export default defineConfig(({ mode }) => {
       define: {
         'process.env.API_KEY': JSON.stringify(env.GEMINI_API_KEY),
         'process.env.GEMINI_API_KEY': JSON.stringify(env.GEMINI_API_KEY),
-        'process.env.CLOUD_PERSIST_ENDPOINT': JSON.stringify(env.CLOUD_PERSIST_ENDPOINT || '')
+        'process.env.CLOUD_PERSIST_ENDPOINT': JSON.stringify(env.CLOUD_PERSIST_ENDPOINT || ''),
+        'process.env.CLOUD_PERSIST_API_KEY': JSON.stringify(env.CLOUD_PERSIST_API_KEY || '')
       },
       resolve: {
         alias: {
