@@ -12,8 +12,10 @@ import './modules/live-agent/components/live-audio';
 import { routeAgentTask } from './orchestration/agentRouter';
 import { createTask } from './orchestration/taskDistributor';
 import { validateHackathonRequirements } from './orchestration/requirementGuard';
+import { checkCloudHealth } from './cloud/services/cloudHealthService';
 
 const AUTO_ROUTE_COOLDOWN_MS = 6000;
+const CLOUD_HEALTH_POLL_MS = 45000;
 
 const normalizeTranscript = (text: string) =>
   text
@@ -30,6 +32,9 @@ const App: React.FC = () => {
   const [minTranscriptLength, setMinTranscriptLength] = useState(18);
   const [liveConnected, setLiveConnected] = useState(false);
   const [liveRecording, setLiveRecording] = useState(false);
+  const [cloudChecked, setCloudChecked] = useState(false);
+  const [cloudReachable, setCloudReachable] = useState(false);
+  const [cloudMessage, setCloudMessage] = useState('Not checked');
   const lastRoutedTranscript = useRef<string>('');
   const lastRouteAt = useRef<number>(0);
   const routeInFlight = useRef(false);
@@ -159,6 +164,29 @@ const App: React.FC = () => {
     };
   }, [autoRouteEnabled, handleRouteRequest, minTranscriptLength, onArtifactCreated]);
 
+  useEffect(() => {
+    let active = true;
+    let timerId: number | undefined;
+
+    const runHealthCheck = async () => {
+      const result = await checkCloudHealth();
+      if (!active) return;
+      setCloudChecked(result.checked);
+      setCloudReachable(result.reachable);
+      setCloudMessage(result.message);
+    };
+
+    runHealthCheck();
+    timerId = window.setInterval(runHealthCheck, CLOUD_HEALTH_POLL_MS);
+
+    return () => {
+      active = false;
+      if (timerId) {
+        window.clearInterval(timerId);
+      }
+    };
+  }, []);
+
   const artifactPanel = useMemo(
     () => (
       <ArtifactPanel
@@ -199,6 +227,9 @@ const App: React.FC = () => {
             liveConnected={liveConnected}
             liveRecording={liveRecording}
             cloudEnabled={compliance.cloudServiceEnabled}
+            cloudChecked={cloudChecked}
+            cloudReachable={cloudReachable}
+            cloudMessage={cloudMessage}
           />
         }
       />
