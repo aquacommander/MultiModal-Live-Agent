@@ -15,7 +15,7 @@ export class GdmLiveAudio extends LitElement {
   @state() isRecording = false;
   @state() status = '';
   @state() error = '';
-  @state() showBackground = true;
+  @state() showBackground = false;
   @state() showRings = true;
   @state() useDynamicColors = true;
   @state() useSmoothAnimations = true;
@@ -37,86 +37,263 @@ export class GdmLiveAudio extends LitElement {
   private speechRecognition: any = null;
 
   static styles = css`
+      :host {
+        display: block;
+        width: 100%;
+        height: 100%;
+      }
+
+      .orb-stage {
+        position: relative;
+        width: 100%;
+        height: 100%;
+        overflow: hidden;
+      }
+
+      .hud-title {
+        position: absolute;
+        top: 24px;
+        left: 24px;
+        z-index: 30;
+        color: #d8e9ff;
+        text-shadow: 0 0 20px rgba(53, 210, 255, 0.15);
+      }
+
+      .hud-title h1 {
+        margin: 0;
+        font-size: 38px;
+        line-height: 1;
+        letter-spacing: 0.08em;
+        font-weight: 500;
+      }
+
+      .hud-title p {
+        margin: 8px 0 0;
+        font-size: 14px;
+        color: rgba(180, 210, 255, 0.8);
+      }
+
+      .top-actions {
+        position: absolute;
+        top: 24px;
+        right: 24px;
+        z-index: 35;
+        display: inline-flex;
+        gap: 10px;
+        padding: 8px;
+        border-radius: 999px;
+        border: 1px solid rgba(120, 200, 255, 0.25);
+        background: rgba(8, 18, 38, 0.75);
+        box-shadow: 0 6px 24px rgba(0, 0, 0, 0.35);
+        backdrop-filter: blur(8px);
+      }
+
+      .top-actions button,
+      .controls button {
+        border: 1px solid rgba(113, 191, 255, 0.28);
+        background: radial-gradient(circle at 30% 30%, rgba(30, 84, 148, 0.7), rgba(10, 26, 52, 0.9));
+        color: #d8f4ff;
+        border-radius: 50%;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+      }
+
+      .top-actions button:hover,
+      .controls button:hover:not(:disabled) {
+        border-color: rgba(53, 210, 255, 0.8);
+        box-shadow: 0 0 0 3px rgba(53, 210, 255, 0.12), 0 0 24px rgba(53, 210, 255, 0.35);
+        transform: translateY(-1px);
+      }
+
+      .top-actions button {
+        width: 38px;
+        height: 38px;
+      }
+
       #status {
         position: absolute;
-        bottom: 5vh;
+        bottom: 7vh;
         left: 0;
         right: 0;
-        z-index: 10;
+        z-index: 20;
         text-align: center;
-        color: rgba(255, 255, 255, 0.6);
+        color: rgba(188, 217, 255, 0.88);
         font-family: 'Inter', sans-serif;
-        font-size: 14px;
+        font-size: 18px;
+        letter-spacing: 0.02em;
         pointer-events: none;
+        text-shadow: 0 0 18px rgba(53, 210, 255, 0.2);
+      }
+
+      .status-line {
+        width: 240px;
+        height: 3px;
+        border-radius: 999px;
+        margin: 10px auto 0;
+        background: linear-gradient(90deg, rgba(53, 210, 255, 0), rgba(53, 210, 255, 0.95), rgba(53, 210, 255, 0));
+        box-shadow: 0 0 18px rgba(53, 210, 255, 0.7);
+      }
+
+      .settings-backdrop {
+        position: absolute;
+        inset: 0;
+        z-index: 33;
       }
 
       .controls {
-        z-index: 100;
+        z-index: 25;
         position: absolute;
-        bottom: 10vh;
+        bottom: 16vh;
         left: 0;
         right: 0;
         display: flex;
         align-items: center;
         justify-content: center;
         flex-direction: row;
-        gap: 20px;
-
-        button {
-          outline: none;
-          border: 1px solid rgba(255, 255, 255, 0.1);
-          color: white;
-          border-radius: 50%;
-          background: rgba(255, 255, 255, 0.05);
-          width: 56px;
-          height: 56px;
-          cursor: pointer;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          transition: all 0.3s ease;
-          backdrop-filter: blur(10px);
-        }
+        gap: 26px;
       }
 
       .settings-toggle {
-        position: absolute;
-        top: 30px;
-        right: 30px;
-        z-index: 100;
-        background: rgba(0, 0, 0, 0.3);
-        border: 1px solid rgba(255, 255, 255, 0.1);
-        color: white;
-        padding: 10px;
-        border-radius: 12px;
-        cursor: pointer;
-        backdrop-filter: blur(10px);
+        display: none;
       }
 
       .settings-panel {
         position: absolute;
-        top: 80px;
-        right: 30px;
-        z-index: 100;
-        background: rgba(0, 0, 0, 0.6);
-        backdrop-filter: blur(20px);
-        border: 1px solid rgba(255, 255, 255, 0.1);
+        top: 76px;
+        right: 24px;
+        z-index: 40;
+        background: rgba(6, 16, 34, 0.88);
+        backdrop-filter: blur(16px);
+        border: 1px solid rgba(120, 200, 255, 0.35);
         padding: 20px;
-        border-radius: 16px;
-        color: white;
+        border-radius: 14px;
+        color: #d9f3ff;
         display: flex;
         flex-direction: column;
         gap: 15px;
-        min-width: 220px;
+        min-width: 230px;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.45);
       }
 
       .toggle-item {
         display: flex;
         align-items: center;
         justify-content: space-between;
-        gap: 10px;
+        gap: 12px;
         font-family: 'Inter', sans-serif;
-        font-size: 14px;
+        font-size: 13px;
+        color: #c3e7ff;
+      }
+
+      .toggle-item input {
+        accent-color: #35d2ff;
+      }
+
+      .control-circle {
+        width: 74px;
+        height: 74px;
+        position: relative;
+        box-shadow: inset 0 0 0 1px rgba(158, 224, 255, 0.08), 0 0 22px rgba(53, 210, 255, 0.18);
+      }
+
+      .control-circle.main {
+        width: 86px;
+        height: 86px;
+        border-color: rgba(123, 215, 255, 0.62);
+        box-shadow: 0 0 0 4px rgba(53, 210, 255, 0.1), 0 0 26px rgba(53, 210, 255, 0.38);
+      }
+
+      .control-circle:disabled {
+        opacity: 0.45;
+        cursor: not-allowed;
+        box-shadow: none;
+      }
+
+      .icon {
+        width: 24px;
+        height: 24px;
+        display: inline-block;
+      }
+
+      .icon.record {
+        width: 30px;
+        height: 30px;
+      }
+
+      .icon.stop {
+        width: 18px;
+        height: 18px;
+        border-radius: 4px;
+        background: rgba(216, 244, 255, 0.78);
+      }
+
+      .icon.refresh {
+        border: 3px solid rgba(216, 244, 255, 0.86);
+        border-right-color: transparent;
+        border-radius: 50%;
+        position: relative;
+      }
+
+      .icon.refresh::after {
+        content: '';
+        position: absolute;
+        right: -2px;
+        top: 2px;
+        border-left: 6px solid rgba(216, 244, 255, 0.9);
+        border-top: 4px solid transparent;
+        border-bottom: 4px solid transparent;
+        transform: rotate(-15deg);
+      }
+
+      .icon.record {
+        border-radius: 50%;
+        background: radial-gradient(circle at 35% 35%, #ff7c8a, var(--danger, #ff4d5f));
+        box-shadow: 0 0 20px rgba(255, 78, 101, 0.55);
+      }
+
+      .icon.gear {
+        width: 20px;
+        height: 20px;
+        border-radius: 50%;
+        border: 2px solid rgba(216, 244, 255, 0.9);
+        position: relative;
+      }
+
+      .icon.gear::before,
+      .icon.gear::after {
+        content: '';
+        position: absolute;
+        inset: -5px;
+        border: 2px dashed rgba(216, 244, 255, 0.7);
+        border-radius: 50%;
+      }
+
+      .icon.gear::after {
+        inset: 5px;
+        border-style: solid;
+        border-color: rgba(216, 244, 255, 0.7);
+      }
+
+      .icon.small {
+        width: 16px;
+        height: 16px;
+      }
+
+      @media (max-width: 1100px) {
+        .hud-title h1 {
+          font-size: 28px;
+        }
+
+        .hud-title p {
+          font-size: 12px;
+        }
+
+        #status {
+          font-size: 22px;
+        }
       }
   `;
 
@@ -125,6 +302,22 @@ export class GdmLiveAudio extends LitElement {
     this.initClient();
     this.initSpeechRecognition();
   }
+
+  connectedCallback() {
+    super.connectedCallback();
+    window.addEventListener('keydown', this.handleGlobalKeydown);
+  }
+
+  disconnectedCallback() {
+    super.disconnectedCallback();
+    window.removeEventListener('keydown', this.handleGlobalKeydown);
+  }
+
+  private handleGlobalKeydown = (event: KeyboardEvent) => {
+    if (event.key === 'Escape' && this.showSettings) {
+      this.showSettings = false;
+    }
+  };
 
   private emitLiveEvent(eventName: string, detail: Record<string, unknown>) {
     window.dispatchEvent(
@@ -385,12 +578,23 @@ export class GdmLiveAudio extends LitElement {
 
   render() {
     return html`
-      <div>
-        <button class="settings-toggle" @click=${() => this.showSettings = !this.showSettings}>
-          Settings
-        </button>
+      <div class="orb-stage">
+        <div class="hud-title">
+          <h1>AUDIO ORB</h1>
+          <p>Talk, create, and act — one conversation.</p>
+        </div>
+
+        <div class="top-actions">
+          <button @click=${() => (this.showSettings = !this.showSettings)} title="Visual settings">
+            <span class="icon gear small"></span>
+          </button>
+          <button @click=${this.reset} ?disabled=${this.isRecording} title="Reset session">
+            <span class="icon refresh small"></span>
+          </button>
+        </div>
 
         ${this.showSettings ? html`
+          <div class="settings-backdrop" @click=${() => (this.showSettings = false)}></div>
           <div class="settings-panel">
             <label class="toggle-item">
               Starfield
@@ -412,12 +616,21 @@ export class GdmLiveAudio extends LitElement {
         ` : ''}
 
         <div class="controls">
-          <button id="resetButton" @click=${this.reset} ?disabled=${this.isRecording}>Reset</button>
-          <button id="startButton" @click=${this.startRecording} ?disabled=${this.isRecording}>Start</button>
-          <button id="stopButton" @click=${this.stopRecording} ?disabled=${!this.isRecording}>Stop</button>
+          <button class="control-circle" id="resetButton" @click=${this.reset} ?disabled=${this.isRecording} title="Reset session">
+            <span class="icon refresh"></span>
+          </button>
+          <button class="control-circle main" id="startButton" @click=${this.startRecording} ?disabled=${this.isRecording} title="Start recording">
+            <span class="icon record"></span>
+          </button>
+          <button class="control-circle" id="stopButton" @click=${this.stopRecording} ?disabled=${!this.isRecording} title="Stop recording">
+            <span class="icon stop"></span>
+          </button>
         </div>
 
-        <div id="status">${this.error || this.status}</div>
+        <div id="status">
+          ${this.error || this.status || 'Ready'}
+          <div class="status-line"></div>
+        </div>
         <gdm-live-audio-visuals-3d
           .inputNode=${this.inputNode}
           .outputNode=${this.outputNode}

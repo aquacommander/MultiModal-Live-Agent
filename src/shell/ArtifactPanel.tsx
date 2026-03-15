@@ -4,14 +4,28 @@ import { Artifact } from '../shared/types/artifact.types';
 interface ArtifactPanelProps {
   artifacts: Artifact[];
   rightContent?: React.ReactNode;
-  cloudWarning?: string;
+  cloudStatus?: {
+    mode: 'local' | 'offline' | 'online';
+    title: string;
+    message: string;
+    hint?: string;
+  };
 }
 
-export const ArtifactPanel: React.FC<ArtifactPanelProps> = ({ artifacts, rightContent, cloudWarning }) => {
+export const ArtifactPanel: React.FC<ArtifactPanelProps> = ({ artifacts, rightContent, cloudStatus }) => {
   return (
     <div className="shell-card">
       <h2>Creative Storyteller</h2>
-      {cloudWarning && <div className="warning-banner">{cloudWarning}</div>}
+      {cloudStatus && (
+        <div className={`sync-card sync-card-${cloudStatus.mode}`}>
+          <div className="sync-card-title-row">
+            <span className="sync-dot" />
+            <strong>{cloudStatus.title}</strong>
+          </div>
+          <div className="sync-card-message">{cloudStatus.message}</div>
+          {cloudStatus.hint && <div className="sync-card-hint">{cloudStatus.hint}</div>}
+        </div>
+      )}
       {rightContent}
       <h3>Artifacts</h3>
       <ul className="list">
@@ -21,7 +35,7 @@ export const ArtifactPanel: React.FC<ArtifactPanelProps> = ({ artifacts, rightCo
             <strong>{artifact.kind}</strong> - {artifact.producer}
             <div className="muted">{new Date(artifact.createdAt).toLocaleTimeString()}</div>
             {(artifact.payload as any)?.localOnly && (
-              <div className="artifact-tag">local-only fallback</div>
+              <div className="artifact-tag">saved locally</div>
             )}
             {artifact.kind === 'status-update' && (
               <div className="muted">{(artifact.payload as any)?.message}</div>

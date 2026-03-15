@@ -195,21 +195,36 @@ const App: React.FC = () => {
     };
   }, []);
 
-  const cloudWarning = useMemo(() => {
+  const cloudStatus = useMemo(() => {
     if (!compliance.cloudServiceEnabled) {
-      return 'Cloud persistence is not configured. Set CLOUD_PERSIST_ENDPOINT to enable uploads.';
+      return {
+        mode: 'local' as const,
+        title: 'Local-first mode',
+        message: 'Your creations are safe and available on this device right away.',
+        hint: 'Add CLOUD_PERSIST_ENDPOINT anytime to enable cloud sync.',
+      };
     }
     if (cloudChecked && !cloudReachable) {
-      return `Cloud upload service unreachable: ${cloudMessage}`;
+      return {
+        mode: 'offline' as const,
+        title: 'Cloud sync temporarily offline',
+        message: 'You can keep creating. New artifacts will continue in local-only mode.',
+        hint: cloudMessage,
+      };
     }
-    return '';
+    return {
+      mode: 'online' as const,
+      title: 'Cloud sync online',
+      message: 'Artifacts are being saved to cloud storage.',
+      hint: cloudMessage,
+    };
   }, [cloudChecked, cloudMessage, cloudReachable, compliance.cloudServiceEnabled]);
 
   const artifactPanel = useMemo(
     () => (
       <ArtifactPanel
         artifacts={artifacts}
-        cloudWarning={cloudWarning}
+        cloudStatus={cloudStatus}
         rightContent={
           <StorytellerWorkspace
             ref={storytellerRef}
@@ -220,7 +235,7 @@ const App: React.FC = () => {
         }
       />
     ),
-    [artifacts, cloudWarning, localFallbackEnabled, onArtifactCreated, onTaskStateChange],
+    [artifacts, cloudStatus, localFallbackEnabled, onArtifactCreated, onTaskStateChange],
   );
 
   return (
