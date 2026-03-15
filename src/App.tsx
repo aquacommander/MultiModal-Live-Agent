@@ -35,10 +35,18 @@ const App: React.FC = () => {
   const [cloudChecked, setCloudChecked] = useState(false);
   const [cloudReachable, setCloudReachable] = useState(false);
   const [cloudMessage, setCloudMessage] = useState('Not checked');
+  const [localFallbackEnabled, setLocalFallbackEnabled] = useState(true);
   const lastRoutedTranscript = useRef<string>('');
   const lastRouteAt = useRef<number>(0);
   const routeInFlight = useRef(false);
   const compliance = useMemo(() => validateHackathonRequirements(), []);
+
+  const runCloudHealthCheck = useCallback(async () => {
+    const result = await checkCloudHealth();
+    setCloudChecked(result.checked);
+    setCloudReachable(result.reachable);
+    setCloudMessage(result.message);
+  }, []);
 
   const handleRouteRequest = useCallback(async (goal: string, source: 'manual' | 'voice' = 'manual') => {
     if (routeInFlight.current) return;
@@ -168,7 +176,7 @@ const App: React.FC = () => {
     let active = true;
     let timerId: number | undefined;
 
-    const runHealthCheck = async () => {
+    const poll = async () => {
       const result = await checkCloudHealth();
       if (!active) return;
       setCloudChecked(result.checked);
@@ -176,8 +184,8 @@ const App: React.FC = () => {
       setCloudMessage(result.message);
     };
 
-    runHealthCheck();
-    timerId = window.setInterval(runHealthCheck, CLOUD_HEALTH_POLL_MS);
+    poll();
+    timerId = window.setInterval(poll, CLOUD_HEALTH_POLL_MS);
 
     return () => {
       active = false;
@@ -187,20 +195,32 @@ const App: React.FC = () => {
     };
   }, []);
 
+  const cloudWarning = useMemo(() => {
+    if (!compliance.cloudServiceEnabled) {
+      return 'Cloud persistence is not configured. Set CLOUD_PERSIST_ENDPOINT to enable uploads.';
+    }
+    if (cloudChecked && !cloudReachable) {
+      return `Cloud upload service unreachable: ${cloudMessage}`;
+    }
+    return '';
+  }, [cloudChecked, cloudMessage, cloudReachable, compliance.cloudServiceEnabled]);
+
   const artifactPanel = useMemo(
     () => (
       <ArtifactPanel
         artifacts={artifacts}
+        cloudWarning={cloudWarning}
         rightContent={
           <StorytellerWorkspace
             ref={storytellerRef}
             onTaskStateChange={onTaskStateChange}
             onArtifactCreated={onArtifactCreated}
+            localFallbackEnabled={localFallbackEnabled}
           />
         }
       />
     ),
-    [artifacts, onArtifactCreated, onTaskStateChange],
+    [artifacts, cloudWarning, localFallbackEnabled, onArtifactCreated, onTaskStateChange],
   );
 
   return (
@@ -215,6 +235,10 @@ const App: React.FC = () => {
             onToggleAutoRoute={setAutoRouteEnabled}
             minTranscriptLength={minTranscriptLength}
             onMinTranscriptLengthChange={setMinTranscriptLength}
+            onRecheckCloudHealth={runCloudHealthCheck}
+            cloudHealthMessage={cloudMessage}
+            localFallbackEnabled={localFallbackEnabled}
+            onToggleLocalFallback={setLocalFallbackEnabled}
           />
         }
         center={<gdm-live-audio />}

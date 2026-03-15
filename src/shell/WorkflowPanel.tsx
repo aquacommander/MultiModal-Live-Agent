@@ -9,6 +9,10 @@ interface WorkflowPanelProps {
   onToggleAutoRoute: (enabled: boolean) => void;
   minTranscriptLength: number;
   onMinTranscriptLengthChange: (value: number) => void;
+  onRecheckCloudHealth: () => void;
+  cloudHealthMessage: string;
+  localFallbackEnabled: boolean;
+  onToggleLocalFallback: (enabled: boolean) => void;
 }
 
 export const WorkflowPanel: React.FC<WorkflowPanelProps> = ({
@@ -19,6 +23,10 @@ export const WorkflowPanel: React.FC<WorkflowPanelProps> = ({
   onToggleAutoRoute,
   minTranscriptLength,
   onMinTranscriptLengthChange,
+  onRecheckCloudHealth,
+  cloudHealthMessage,
+  localFallbackEnabled,
+  onToggleLocalFallback,
 }) => {
   const [goal, setGoal] = useState('');
 
@@ -45,6 +53,20 @@ export const WorkflowPanel: React.FC<WorkflowPanelProps> = ({
             onChange={(e) => onMinTranscriptLengthChange(Number(e.target.value))}
           />
         </label>
+        <label className="setting-row">
+          <span>Local-only fallback</span>
+          <input
+            type="checkbox"
+            checked={localFallbackEnabled}
+            onChange={(e) => onToggleLocalFallback(e.target.checked)}
+          />
+        </label>
+        <div className="setting-row">
+          <span>Cloud health: {cloudHealthMessage}</span>
+          <button type="button" className="compact-btn" onClick={onRecheckCloudHealth}>
+            Re-check
+          </button>
+        </div>
       </div>
       <div className="workflow-composer">
         <textarea

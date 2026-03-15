@@ -10,6 +10,7 @@ import { persistArtifactToCloud } from '../../../cloud/services/cloudArtifactSer
 interface StorytellerWorkspaceProps {
   onTaskStateChange: (task: WorkflowTask) => void;
   onArtifactCreated: (artifact: Artifact) => void;
+  localFallbackEnabled: boolean;
 }
 
 export interface StorytellerWorkspaceHandle {
@@ -19,6 +20,7 @@ export interface StorytellerWorkspaceHandle {
 export const StorytellerWorkspace = forwardRef<StorytellerWorkspaceHandle, StorytellerWorkspaceProps>(({
   onTaskStateChange,
   onArtifactCreated,
+  localFallbackEnabled,
 }, ref) => {
   const [text, setText] = useState('');
   const [style, setStyle] = useState('');
@@ -57,6 +59,10 @@ export const StorytellerWorkspace = forwardRef<StorytellerWorkspaceHandle, Story
         sourceUrl: imageDataUrl,
         prompt,
       });
+      const imageLocalOnly = !persistedImage.uploaded;
+      if (imageLocalOnly && !localFallbackEnabled) {
+        throw new Error(`Cloud image persistence failed: ${persistedImage.message}`);
+      }
       onArtifactCreated({
         id: `artifact-image-${Date.now()}`,
         kind: 'image',
@@ -65,9 +71,21 @@ export const StorytellerWorkspace = forwardRef<StorytellerWorkspaceHandle, Story
           imageDataUrl,
           prompt,
           cloud: persistedImage,
+          localOnly: imageLocalOnly,
         },
         createdAt: new Date().toISOString(),
       });
+      if (imageLocalOnly) {
+        onArtifactCreated({
+          id: `artifact-status-image-local-${Date.now()}`,
+          kind: 'status-update',
+          producer: 'creative-storyteller',
+          payload: {
+            message: `Image stored as local-only fallback: ${persistedImage.message}`,
+          },
+          createdAt: new Date().toISOString(),
+        });
+      }
 
       setStatus('Generating cinematic video...');
       const videoUrl = await generateTextVideo(prompt, data, mimeType, styleToUse);
@@ -78,6 +96,10 @@ export const StorytellerWorkspace = forwardRef<StorytellerWorkspaceHandle, Story
         sourceUrl: videoUrl,
         prompt,
       });
+      const videoLocalOnly = !persistedVideo.uploaded;
+      if (videoLocalOnly && !localFallbackEnabled) {
+        throw new Error(`Cloud video persistence failed: ${persistedVideo.message}`);
+      }
       onArtifactCreated({
         id: `artifact-video-${Date.now()}`,
         kind: 'video',
@@ -86,12 +108,24 @@ export const StorytellerWorkspace = forwardRef<StorytellerWorkspaceHandle, Story
           videoUrl,
           prompt,
           cloud: persistedVideo,
+          localOnly: videoLocalOnly,
         },
         createdAt: new Date().toISOString(),
       });
+      if (videoLocalOnly) {
+        onArtifactCreated({
+          id: `artifact-status-video-local-${Date.now()}`,
+          kind: 'status-update',
+          producer: 'creative-storyteller',
+          payload: {
+            message: `Video stored as local-only fallback: ${persistedVideo.message}`,
+          },
+          createdAt: new Date().toISOString(),
+        });
+      }
 
       onTaskStateChange({ ...task, status: 'completed' });
-      setStatus('Completed.');
+      setStatus(imageLocalOnly || videoLocalOnly ? 'Completed (local-only fallback).' : 'Completed.');
     } catch (err: any) {
       onTaskStateChange({ ...task, status: 'failed' });
       setStatus(err.message || 'Generation failed');

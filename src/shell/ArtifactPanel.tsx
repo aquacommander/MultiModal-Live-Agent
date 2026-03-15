@@ -4,12 +4,14 @@ import { Artifact } from '../shared/types/artifact.types';
 interface ArtifactPanelProps {
   artifacts: Artifact[];
   rightContent?: React.ReactNode;
+  cloudWarning?: string;
 }
 
-export const ArtifactPanel: React.FC<ArtifactPanelProps> = ({ artifacts, rightContent }) => {
+export const ArtifactPanel: React.FC<ArtifactPanelProps> = ({ artifacts, rightContent, cloudWarning }) => {
   return (
     <div className="shell-card">
       <h2>Creative Storyteller</h2>
+      {cloudWarning && <div className="warning-banner">{cloudWarning}</div>}
       {rightContent}
       <h3>Artifacts</h3>
       <ul className="list">
@@ -18,6 +20,9 @@ export const ArtifactPanel: React.FC<ArtifactPanelProps> = ({ artifacts, rightCo
           <li key={artifact.id}>
             <strong>{artifact.kind}</strong> - {artifact.producer}
             <div className="muted">{new Date(artifact.createdAt).toLocaleTimeString()}</div>
+            {(artifact.payload as any)?.localOnly && (
+              <div className="artifact-tag">local-only fallback</div>
+            )}
             {artifact.kind === 'status-update' && (
               <div className="muted">{(artifact.payload as any)?.message}</div>
             )}
