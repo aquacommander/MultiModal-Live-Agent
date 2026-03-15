@@ -25,6 +25,10 @@ Expected endpoint behavior:
 - fields include `file`, `kind`, `prompt`, `timestamp`
 - returns JSON like `{ "url": "https://...", "message": "uploaded" }`
 
+A ready-to-deploy Cloud Run service is included at:
+
+- `services/cloud-upload`
+
 ## Structure
 
 - `src/modules/live-agent` - ORB Live API module
