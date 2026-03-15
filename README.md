@@ -9,8 +9,21 @@ Integrated hackathon platform with:
 ## Run locally
 
 1. Install dependencies: `npm install`
-2. Set `GEMINI_API_KEY` in `.env.local`
-3. Start app: `npm run dev`
+2. Copy `.env.example` to `.env.local`
+3. Set `GEMINI_API_KEY` in `.env.local`
+4. (Optional) Set `CLOUD_PERSIST_ENDPOINT` in `.env.local` for cloud artifact uploads
+5. Start app: `npm run dev`
+
+## Cloud persistence
+
+When `CLOUD_PERSIST_ENDPOINT` is configured, generated image/video artifacts are uploaded
+to your cloud endpoint and surfaced in the artifact panel as cloud links.
+
+Expected endpoint behavior:
+
+- accepts `POST multipart/form-data`
+- fields include `file`, `kind`, `prompt`, `timestamp`
+- returns JSON like `{ "url": "https://...", "message": "uploaded" }`
 
 ## Structure
 

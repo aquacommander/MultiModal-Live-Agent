@@ -11,6 +11,7 @@ import { useWorkflowCoordinator } from './orchestration/workflowCoordinator';
 import './modules/live-agent/components/live-audio';
 import { routeAgentTask } from './orchestration/agentRouter';
 import { createTask } from './orchestration/taskDistributor';
+import { validateHackathonRequirements } from './orchestration/requirementGuard';
 
 const AUTO_ROUTE_COOLDOWN_MS = 6000;
 
@@ -32,6 +33,7 @@ const App: React.FC = () => {
   const lastRoutedTranscript = useRef<string>('');
   const lastRouteAt = useRef<number>(0);
   const routeInFlight = useRef(false);
+  const compliance = useMemo(() => validateHackathonRequirements(), []);
 
   const handleRouteRequest = useCallback(async (goal: string, source: 'manual' | 'voice' = 'manual') => {
     if (routeInFlight.current) return;
@@ -196,6 +198,7 @@ const App: React.FC = () => {
             autoRouteEnabled={autoRouteEnabled}
             liveConnected={liveConnected}
             liveRecording={liveRecording}
+            cloudEnabled={compliance.cloudServiceEnabled}
           />
         }
       />

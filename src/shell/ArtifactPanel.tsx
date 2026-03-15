@@ -22,24 +22,54 @@ export const ArtifactPanel: React.FC<ArtifactPanelProps> = ({ artifacts, rightCo
               <div className="muted">{(artifact.payload as any)?.message}</div>
             )}
             {artifact.kind === 'image' && (
-              <a
-                className="muted"
-                href={(artifact.payload as any)?.imageDataUrl}
-                target="_blank"
-                rel="noreferrer"
-              >
-                Open image
-              </a>
+              <>
+                <a
+                  className="muted"
+                  href={(artifact.payload as any)?.imageDataUrl}
+                  target="_blank"
+                  rel="noreferrer"
+                >
+                  Open image
+                </a>
+                {(artifact.payload as any)?.cloud?.persistedUrl && (
+                  <a
+                    className="muted"
+                    href={(artifact.payload as any)?.cloud?.persistedUrl}
+                    target="_blank"
+                    rel="noreferrer"
+                  >
+                    Open cloud image
+                  </a>
+                )}
+                {(artifact.payload as any)?.cloud?.message && (
+                  <div className="muted">{(artifact.payload as any)?.cloud?.message}</div>
+                )}
+              </>
             )}
             {artifact.kind === 'video' && (
-              <a
-                className="muted"
-                href={(artifact.payload as any)?.videoUrl}
-                target="_blank"
-                rel="noreferrer"
-              >
-                Open video
-              </a>
+              <>
+                <a
+                  className="muted"
+                  href={(artifact.payload as any)?.videoUrl}
+                  target="_blank"
+                  rel="noreferrer"
+                >
+                  Open video
+                </a>
+                {(artifact.payload as any)?.cloud?.persistedUrl && (
+                  <a
+                    className="muted"
+                    href={(artifact.payload as any)?.cloud?.persistedUrl}
+                    target="_blank"
+                    rel="noreferrer"
+                  >
+                    Open cloud video
+                  </a>
+                )}
+                {(artifact.payload as any)?.cloud?.message && (
+                  <div className="muted">{(artifact.payload as any)?.cloud?.message}</div>
+                )}
+              </>
             )}
           </li>
         ))}

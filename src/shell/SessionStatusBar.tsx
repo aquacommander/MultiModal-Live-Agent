@@ -7,6 +7,7 @@ interface SessionStatusBarProps {
   autoRouteEnabled: boolean;
   liveConnected: boolean;
   liveRecording: boolean;
+  cloudEnabled: boolean;
 }
 
 export const SessionStatusBar: React.FC<SessionStatusBarProps> = ({
@@ -15,6 +16,7 @@ export const SessionStatusBar: React.FC<SessionStatusBarProps> = ({
   autoRouteEnabled,
   liveConnected,
   liveRecording,
+  cloudEnabled,
 }) => {
   return (
     <div className="status-bar">
@@ -24,7 +26,7 @@ export const SessionStatusBar: React.FC<SessionStatusBarProps> = ({
       <span>Live Session: {liveConnected ? 'Connected' : 'Disconnected'}</span>
       <span>Mic: {liveRecording ? 'Recording' : 'Idle'}</span>
       <span>Model Stack: Gemini Live + Gemini Image/Video</span>
-      <span>Cloud: Google Cloud (integration-ready)</span>
+      <span>Cloud Persistence: {cloudEnabled ? 'Configured' : 'Not configured'}</span>
     </div>
   );
 };

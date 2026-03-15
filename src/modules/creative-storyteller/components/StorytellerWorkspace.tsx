@@ -5,6 +5,7 @@ import { generateTextImage } from '../services/imageGenerationService';
 import { generateStyleSuggestion } from '../services/styleSuggestionService';
 import { generateTextVideo } from '../services/videoGenerationService';
 import { getRandomStyle } from '../utils/storytellerUtils';
+import { persistArtifactToCloud } from '../../../cloud/services/cloudArtifactService';
 
 interface StorytellerWorkspaceProps {
   onTaskStateChange: (task: WorkflowTask) => void;
@@ -50,22 +51,42 @@ export const StorytellerWorkspace = forwardRef<StorytellerWorkspaceHandle, Story
       const { data, mimeType } = await generateTextImage({ text: prompt, style: styleToUse });
       const imageDataUrl = `data:${mimeType};base64,${data}`;
       setImageSrc(imageDataUrl);
+      setStatus('Persisting image artifact...');
+      const persistedImage = await persistArtifactToCloud({
+        kind: 'image',
+        sourceUrl: imageDataUrl,
+        prompt,
+      });
       onArtifactCreated({
         id: `artifact-image-${Date.now()}`,
         kind: 'image',
         producer: 'creative-storyteller',
-        payload: { imageDataUrl, prompt },
+        payload: {
+          imageDataUrl,
+          prompt,
+          cloud: persistedImage,
+        },
         createdAt: new Date().toISOString(),
       });
 
       setStatus('Generating cinematic video...');
       const videoUrl = await generateTextVideo(prompt, data, mimeType, styleToUse);
       setVideoSrc(videoUrl);
+      setStatus('Persisting video artifact...');
+      const persistedVideo = await persistArtifactToCloud({
+        kind: 'video',
+        sourceUrl: videoUrl,
+        prompt,
+      });
       onArtifactCreated({
         id: `artifact-video-${Date.now()}`,
         kind: 'video',
         producer: 'creative-storyteller',
-        payload: { videoUrl, prompt },
+        payload: {
+          videoUrl,
+          prompt,
+          cloud: persistedVideo,
+        },
         createdAt: new Date().toISOString(),
       });
 
