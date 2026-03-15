@@ -1,37 +1,160 @@
 # ORB Integrated Agent Platform
 
-Integrated hackathon platform with:
+An integrated multimodal hackathon platform combining:
 
-- `Live Agent` (ORB realtime voice experience)
-- `Creative Storyteller` (multimodal generation module)
-- `UI Navigator` placeholder for next phase
+- `Live Agent` (real-time voice interaction with ORB visualization)
+- `Creative Storyteller` (image + video generation pipeline)
+- `Workflow Orchestration` (task routing, artifact tracking, sync status)
+- `UI Navigator` (placeholder module for future phase)
 
-## Run locally
+---
 
-1. Install dependencies: `npm install`
-2. Copy `.env.example` to `.env.local`
-3. Set `GEMINI_API_KEY` in `.env.local`
-4. (Optional) Set `CLOUD_PERSIST_ENDPOINT` in `.env.local` for cloud artifact uploads
-5. Start app: `npm run dev`
+## Core Features
 
-## Cloud persistence
+- Realtime Live Agent voice session with interruption handling
+- Auto-routing from voice/transcript to creative generation tasks
+- Storyteller generation flow:
+  - style suggestion
+  - image generation
+  - video generation
+- Artifact panel with local/cloud status and links
+- Cloud health checks + local fallback mode
+- Upload service scaffold for Cloud Run + Cloud Storage
 
-When `CLOUD_PERSIST_ENDPOINT` is configured, generated image/video artifacts are uploaded
-to your cloud endpoint and surfaced in the artifact panel as cloud links.
+---
 
-Expected endpoint behavior:
+## Tech Stack
 
-- accepts `POST multipart/form-data`
-- fields include `file`, `kind`, `prompt`, `timestamp`
-- returns JSON like `{ "url": "https://...", "message": "uploaded" }`
+- Frontend: React + TypeScript + Vite
+- Realtime module: Lit + Three.js + Gemini Live
+- Generation APIs: `@google/genai`
+- Backend upload service: Node.js + Express + Multer + GCS SDK
+- Deployment target: Google Cloud Run + Cloud Storage
 
-A ready-to-deploy Cloud Run service is included at:
+---
 
+## Repository Structure
+
+- `src/modules/live-agent` - ORB Live API module and 3D visuals
+- `src/modules/creative-storyteller` - multimodal generation UI + services
+- `src/orchestration` - routing, tasks, workflow state, compliance guard
+- `src/cloud/services` - cloud upload + cloud health clients
+- `src/shell` - integrated app shell and panels
+- `services/cloud-upload` - deployable upload service backend
+- `docs/` - architecture, mappings, handoff, integration notes
+
+---
+
+## Prerequisites
+
+- Node.js 20+
+- npm
+- (Optional for cloud deploy) Google Cloud SDK (`gcloud`)
+
+---
+
+## Frontend Local Setup
+
+1. Install dependencies:
+   - `npm install`
+2. Configure env:
+   - copy `.env.example` -> `.env`
+3. Set at least:
+   - `GEMINI_API_KEY`
+4. Run:
+   - `npm run dev`
+5. Open:
+   - `http://localhost:3000`
+
+---
+
+## Environment Variables
+
+### Root app (`.env`)
+
+- `GEMINI_API_KEY` - required for Gemini Live + generation
+- `CLOUD_PERSIST_ENDPOINT` - optional upload endpoint (`/artifacts/upload`)
+- `CLOUD_PERSIST_API_KEY` - optional API key header (`x-upload-api-key`)
+
+### Upload service (`services/cloud-upload/.env`)
+
+- `PORT` - default `8080`
+- `BUCKET_NAME` - target Cloud Storage bucket
+- `GOOGLE_CLOUD_PROJECT` - GCP project id
+- `CORS_ORIGINS` - allowed frontend origins
+- `UPLOAD_API_KEY` - optional upload API key (must match frontend)
+- `MAKE_PUBLIC` - `false` for signed URLs, `true` for public objects
+- `MAX_UPLOAD_BYTES` - upload limit
+
+---
+
+## Cloud Persistence Modes
+
+The app supports three sync states:
+
+- `Local-first mode` - no cloud endpoint configured
+- `Cloud sync temporarily offline` - endpoint configured but unreachable
+- `Cloud sync online` - upload service reachable and active
+
+With `Local-only fallback` enabled, generation still succeeds when cloud sync is down.
+
+---
+
+## Backend Upload Service
+
+Location:
 - `services/cloud-upload`
 
-## Structure
+Run locally:
+1. `cd services/cloud-upload`
+2. `npm install`
+3. configure `.env`
+4. `npm run dev`
 
-- `src/modules/live-agent` - ORB Live API module
-- `src/modules/creative-storyteller` - multimodal generation module
-- `src/orchestration` - workflow/task/artifact coordination
-- `src/shell` - integrated UI shell
+Endpoints:
+- `GET /healthz`
+- `POST /artifacts/upload` (multipart form-data: `file`, `kind`, `prompt`, `timestamp`)
+
+---
+
+## Cloud Deploy Notes
+
+You can deploy `services/cloud-upload` to Cloud Run and point:
+- `CLOUD_PERSIST_ENDPOINT=https://<service-url>/artifacts/upload`
+
+Important:
+- Some org policies block public Cloud Run (`allUsers` invoker)
+- If blocked, use local upload service or private authenticated proxy pattern
+
+Deployment helper:
+- `services/cloud-upload/deploy.ps1`
+
+---
+
+## Testing Checklist
+
+- Start frontend and confirm ORB renders
+- Start mic and verify Live Agent session/events
+- Trigger multimodal request and verify:
+  - workflow task transitions
+  - image/video artifacts
+  - cloud/local sync status
+- Toggle fallback mode and test offline behavior
+- Build check:
+  - `npm run build`
+
+---
+
+## Known Constraints
+
+- `UI Navigator` is currently a placeholder module
+- Intent routing is heuristic regex-based (not model-classified)
+- Cloud Run public access may be restricted by org IAM policy
+
+---
+
+## Documentation References
+
+- `docs/architecture.md`
+- `docs/file-mapping.md`
+- `docs/suyama-handoff.md`
