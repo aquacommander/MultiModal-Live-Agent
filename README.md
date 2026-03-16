@@ -96,7 +96,6 @@ The app supports three sync states:
 - `Cloud sync temporarily offline` - endpoint configured but unreachable
 - `Cloud sync online` - upload service reachable and active
 
-With `Local-only fallback` enabled, generation still succeeds when cloud sync is down.
 
 ---
 
